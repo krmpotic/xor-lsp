@@ -43,17 +43,13 @@
 //! ```
 use std::error::Error;
 
-use lsp_types::OneOf;
-use lsp_types::{
-    request::GotoDefinition, GotoDefinitionResponse, InitializeParams, ServerCapabilities,
-};
-
-use lsp_server::{Connection, ExtractError, Message, Request, RequestId, Response};
-
-use std::fs::File;
-
 #[allow(unused_imports)]
 use log::{error, warn, info, debug, trace};
+use std::fs::File;
+
+use lsp_types::*;
+use lsp_types::request::HoverRequest;
+use lsp_server::{Connection, ExtractError, Message, Request, RequestId, Response};
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     simplelog::WriteLogger::init(
@@ -71,7 +67,8 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
 
     // Run the server and wait for the two threads to end (typically by trigger LSP Exit event).
     let server_capabilities = serde_json::to_value(&ServerCapabilities {
-        definition_provider: Some(OneOf::Left(true)),
+        // definition_provider: Some(OneOf::Left(true)),
+        hover_provider: Some(HoverProviderCapability::Simple(true)),
         ..Default::default()
     })
     .unwrap();
@@ -98,7 +95,8 @@ fn main_loop(
                     return Ok(());
                 }
                 info!("got request: {req:?}");
-                match cast::<GotoDefinition>(req) {
+                /*
+                match cast::<GotoDefinition>(req.clone()) {
                     Ok((id, params)) => {
                         info!("got gotoDefinition request #{id}: {params:?}");
                         let result = Some(GotoDefinitionResponse::Array(Vec::new()));
@@ -110,6 +108,30 @@ fn main_loop(
                     Err(err @ ExtractError::JsonError { .. }) => panic!("{err:?}"),
                     Err(ExtractError::MethodMismatch(req)) => req,
                 };
+                */
+                match cast::<HoverRequest>(req.clone()) {
+                    Ok((id, params)) => {
+                        info!("got hover request #{id}: {params:?}");
+                        let result = Some(Hover {
+                            contents: HoverContents::Markup(MarkupContent {
+                                kind: MarkupKind::Markdown,
+                                value: format!("# Hello\n world!"),
+                            }),
+                            range: None,
+                        });
+                        let result = serde_json::to_value(&result).unwrap();
+                        let result = Response {
+                            id,
+                            result: Some(result),
+                            error: None,
+                        };
+                        connection.sender.send(Message::Response(result.clone()))?;
+                        continue;
+                    }
+                    Err(_) => {
+                        info!("HoverRequest Err");
+                    }
+                }
                 // ...
             }
             Message::Response(resp) => {
