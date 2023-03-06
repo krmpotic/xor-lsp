@@ -8,6 +8,8 @@ use lsp_server::{Connection, ExtractError, Message, Request, RequestId, Response
 use lsp_types::request::HoverRequest;
 use lsp_types::*;
 
+mod lsp_util;
+
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     simplelog::WriteLogger::init(
         simplelog::LevelFilter::Debug,
@@ -66,10 +68,11 @@ fn main_loop(
                 match cast::<HoverRequest>(req.clone()) {
                     Ok((id, params)) => {
                         info!("got hover request #{id}: {params:?}");
+                        let word = lsp_util::get_word_from_file_params(&params.text_document_position_params).unwrap();
                         let result = Some(Hover {
                             contents: HoverContents::Markup(MarkupContent {
                                 kind: MarkupKind::Markdown,
-                                value: format!("# Hover Request (id: {id})!\n{params:#?}"),
+                                value: format!("# Hover Request (id: {id}) (word: {word})!\n{params:#?}"),
                             }),
                             range: None,
                         });
