@@ -29,9 +29,7 @@ pub fn find_word_at_pos(line: &str, col: usize) -> (usize, usize) {
     (start, end.map(|(i, _)| i).unwrap_or(col))
 }
 
-pub fn get_word_from_file_params(
-    pos_params: &TextDocumentPositionParams,
-) -> Option<String> {
+pub fn get_word_from_file_params(pos_params: &TextDocumentPositionParams) -> Option<String> {
     let uri = &pos_params.text_document.uri;
     let line = pos_params.position.line as usize;
     let col = pos_params.position.character as usize;
@@ -46,6 +44,6 @@ pub fn get_word_from_file_params(
             let (start, end) = find_word_at_pos(&line_conts, col);
             Some(String::from(&line_conts[start..end]))
         }
-        Err(_) => None 
+        Err(_) => None,
     }
 }

@@ -9,6 +9,7 @@ use lsp_types::request::HoverRequest;
 use lsp_types::*;
 
 mod lsp_util;
+mod x86_csv;
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     simplelog::WriteLogger::init(
@@ -17,6 +18,9 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
         File::create("/tmp/xor_lsp.log").unwrap(),
     )
     .unwrap();
+
+    let csv_file = File::open("misc/x86spec.csv").unwrap();
+    let map = x86_csv::parse(csv_file).unwrap();
 
     info!("starting xor-lsp LSP server");
 
@@ -30,7 +34,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     })
     .unwrap();
     let initialization_params = connection.initialize(server_capabilities)?;
-    main_loop(connection, initialization_params)?;
+    main_loop(connection, initialization_params, map)?;
     io_threads.join()?;
 
     info!("shutting down server");
@@ -40,6 +44,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
 fn main_loop(
     connection: Connection,
     params: serde_json::Value,
+    map: std::collections::HashMap<String, Vec<x86_csv::X86Data>>,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
     let _params: InitializeParams = serde_json::from_value(params).unwrap();
     info!("starting main loop");
@@ -68,11 +73,24 @@ fn main_loop(
                 match cast::<HoverRequest>(req.clone()) {
                     Ok((id, params)) => {
                         info!("got hover request #{id}: {params:?}");
-                        let word = lsp_util::get_word_from_file_params(&params.text_document_position_params).unwrap();
+                        let word = lsp_util::get_word_from_file_params(
+                            &params.text_document_position_params,
+                        )
+                        .unwrap();
+                        if !map.contains_key(&word) {
+                            // TODO: empty or no response?
+                            continue;
+                        }
+                        let data = map.get(&word).unwrap();
+                        let mut value = String::new();
+                        for d in data {
+                            value = format!("{}# {}\n{}\n", value, d.syntax, d.desc);
+                        }
+
                         let result = Some(Hover {
                             contents: HoverContents::Markup(MarkupContent {
                                 kind: MarkupKind::Markdown,
-                                value: format!("# Hover Request (id: {id}) (word: {word})!\n{params:#?}"),
+                                value,
                             }),
                             range: None,
                         });
