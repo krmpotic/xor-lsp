@@ -50,9 +50,20 @@ use lsp_types::{
 
 use lsp_server::{Connection, ExtractError, Message, Request, RequestId, Response};
 
+use std::fs::File;
+
+#[allow(unused_imports)]
+use log::{error, warn, info, debug, trace};
+
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
+    simplelog::WriteLogger::init(
+        simplelog::LevelFilter::Debug,
+        simplelog::Config::default(),
+        File::create("/tmp/xor_lsp.log").unwrap()
+    ).unwrap();
+
     // Note that  we must have our logging only write out to stderr.
-    eprintln!("starting generic LSP server");
+    info!("starting generic LSP server");
 
     // Create the transport. Includes the stdio (stdin and stdout) versions but this could
     // also be implemented to use sockets or HTTP.
@@ -69,7 +80,7 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     io_threads.join()?;
 
     // Shut down gracefully.
-    eprintln!("shutting down server");
+    info!("shutting down server");
     Ok(())
 }
 
@@ -78,18 +89,18 @@ fn main_loop(
     params: serde_json::Value,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
     let _params: InitializeParams = serde_json::from_value(params).unwrap();
-    eprintln!("starting example main loop");
+    info!("starting example main loop");
     for msg in &connection.receiver {
-        eprintln!("got msg: {msg:?}");
+        info!("got msg: {msg:?}");
         match msg {
             Message::Request(req) => {
                 if connection.handle_shutdown(&req)? {
                     return Ok(());
                 }
-                eprintln!("got request: {req:?}");
+                info!("got request: {req:?}");
                 match cast::<GotoDefinition>(req) {
                     Ok((id, params)) => {
-                        eprintln!("got gotoDefinition request #{id}: {params:?}");
+                        info!("got gotoDefinition request #{id}: {params:?}");
                         let result = Some(GotoDefinitionResponse::Array(Vec::new()));
                         let result = serde_json::to_value(&result).unwrap();
                         let resp = Response { id, result: Some(result), error: None };
@@ -102,10 +113,10 @@ fn main_loop(
                 // ...
             }
             Message::Response(resp) => {
-                eprintln!("got response: {resp:?}");
+                info!("got response: {resp:?}");
             }
             Message::Notification(not) => {
-                eprintln!("got notification: {not:?}");
+                info!("got notification: {not:?}");
             }
         }
     }
