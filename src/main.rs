@@ -1,46 +1,3 @@
-//! A minimal example LSP server that can only respond to the `gotoDefinition` request. To use
-//! this example, execute it and then send an `initialize` request.
-//!
-//! ```no_run
-//! Content-Length: 85
-//!
-//! {"jsonrpc": "2.0", "method": "initialize", "id": 1, "params": {"capabilities": {}}}
-//! ```
-//!
-//! This will respond with a server response. Then send it a `initialized` notification which will
-//! have no response.
-//!
-//! ```no_run
-//! Content-Length: 59
-//!
-//! {"jsonrpc": "2.0", "method": "initialized", "params": {}}
-//! ```
-//!
-//! Once these two are sent, then we enter the main loop of the server. The only request this
-//! example can handle is `gotoDefinition`:
-//!
-//! ```no_run
-//! Content-Length: 159
-//!
-//! {"jsonrpc": "2.0", "method": "textDocument/definition", "id": 2, "params": {"textDocument": {"uri": "file://temp"}, "position": {"line": 1, "character": 1}}}
-//! ```
-//!
-//! To finish up without errors, send a shutdown request:
-//!
-//! ```no_run
-//! Content-Length: 67
-//!
-//! {"jsonrpc": "2.0", "method": "shutdown", "id": 3, "params": null}
-//! ```
-//!
-//! The server will exit the main loop and finally we send a `shutdown` notification to stop
-//! the server.
-//!
-//! ```
-//! Content-Length: 54
-//!
-//! {"jsonrpc": "2.0", "method": "exit", "params": null}
-//! ```
 use std::error::Error;
 
 #[allow(unused_imports)]
@@ -59,11 +16,8 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     )
     .unwrap();
 
-    // Note that  we must have our logging only write out to stderr.
-    info!("starting generic LSP server");
+    info!("starting xor-lsp LSP server");
 
-    // Create the transport. Includes the stdio (stdin and stdout) versions but this could
-    // also be implemented to use sockets or HTTP.
     let (connection, io_threads) = Connection::stdio();
 
     // Run the server and wait for the two threads to end (typically by trigger LSP Exit event).
@@ -77,7 +31,6 @@ fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     main_loop(connection, initialization_params)?;
     io_threads.join()?;
 
-    // Shut down gracefully.
     info!("shutting down server");
     Ok(())
 }
@@ -87,7 +40,7 @@ fn main_loop(
     params: serde_json::Value,
 ) -> Result<(), Box<dyn Error + Sync + Send>> {
     let _params: InitializeParams = serde_json::from_value(params).unwrap();
-    info!("starting example main loop");
+    info!("starting main loop");
     for msg in &connection.receiver {
         info!("got msg: {msg:?}");
         match msg {
