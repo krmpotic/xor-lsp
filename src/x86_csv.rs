@@ -1,11 +1,12 @@
 use csv;
 use std::collections::HashMap;
 use std::error::Error;
+use std::fmt;
 use std::io::Read;
 
 #[derive(Debug, serde::Deserialize)]
 pub struct X86Data {
-    pub syntax: String,
+    syntax: String,
     _go_syntax: String,
     _gnu_syntax: String,
     _opcode: String,
@@ -16,7 +17,7 @@ pub struct X86Data {
     _action: String,
     _multisize: String,
     _datasize: Option<i32>,
-    pub desc: String,
+    desc: String,
 }
 
 pub fn parse<R: Read>(r: R) -> Result<HashMap<String, Vec<X86Data>>, Box<dyn Error>> {
@@ -44,4 +45,10 @@ pub fn parse<R: Read>(r: R) -> Result<HashMap<String, Vec<X86Data>>, Box<dyn Err
     }
 
     Ok(map)
+}
+
+impl fmt::Display for X86Data {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "# {}\n{}\n", self.syntax, self.desc)
+    }
 }

@@ -84,7 +84,7 @@ fn main_loop(
                         let data = map.get(&word).unwrap();
                         let mut value = String::new();
                         for d in data {
-                            value = format!("{}# {}\n{}\n", value, d.syntax, d.desc);
+                            value = format!("{}{}", value, d);
                         }
 
                         let result = Some(Hover {
