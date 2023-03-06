@@ -44,19 +44,20 @@
 use std::error::Error;
 
 #[allow(unused_imports)]
-use log::{error, warn, info, debug, trace};
+use log::{debug, error, info, trace, warn};
 use std::fs::File;
 
-use lsp_types::*;
-use lsp_types::request::HoverRequest;
 use lsp_server::{Connection, ExtractError, Message, Request, RequestId, Response};
+use lsp_types::request::HoverRequest;
+use lsp_types::*;
 
 fn main() -> Result<(), Box<dyn Error + Sync + Send>> {
     simplelog::WriteLogger::init(
         simplelog::LevelFilter::Debug,
         simplelog::Config::default(),
-        File::create("/tmp/xor_lsp.log").unwrap()
-    ).unwrap();
+        File::create("/tmp/xor_lsp.log").unwrap(),
+    )
+    .unwrap();
 
     // Note that  we must have our logging only write out to stderr.
     info!("starting generic LSP server");
