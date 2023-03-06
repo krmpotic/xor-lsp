@@ -40,9 +40,14 @@ pub fn get_word_from_file_params(pos_params: &TextDocumentPositionParams) -> Opt
             let file = File::open(file).unwrap_or_else(|_| panic!("Couldn't open file -> {}", uri));
             let buf_reader = std::io::BufReader::new(file);
 
-            let line_conts = buf_reader.lines().nth(line).unwrap().unwrap();
-            let (start, end) = find_word_at_pos(&line_conts, col);
-            Some(String::from(&line_conts[start..end]))
+            let line = buf_reader.lines().nth(line)?;
+            let line = if let Ok(line) = line {
+                line
+            } else {
+                return None;
+            };
+            let (start, end) = find_word_at_pos(&line, col);
+            Some(String::from(&line[start..end]))
         }
         Err(_) => None,
     }

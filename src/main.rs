@@ -73,10 +73,13 @@ fn main_loop(
                 match cast::<HoverRequest>(req.clone()) {
                     Ok((id, params)) => {
                         info!("got hover request #{id}: {params:?}");
-                        let word = lsp_util::get_word_from_file_params(
+                        let word = if let Some(word) = lsp_util::get_word_from_file_params(
                             &params.text_document_position_params,
-                        )
-                        .unwrap();
+                        ) {
+                            word
+                        } else {
+                            continue;
+                        };
                         if !map.contains_key(&word) {
                             // TODO: empty or no response?
                             continue;
