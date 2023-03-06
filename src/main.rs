@@ -69,7 +69,7 @@ fn main_loop(
                         let result = Some(Hover {
                             contents: HoverContents::Markup(MarkupContent {
                                 kind: MarkupKind::Markdown,
-                                value: format!("# Hello\n world!"),
+                                value: format!("# Hover Request (id: {id})!\n{params:#?}"),
                             }),
                             range: None,
                         });
